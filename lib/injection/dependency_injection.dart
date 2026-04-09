@@ -8,14 +8,17 @@ import '../data/repositories/mock_auth_repository.dart';
 import '../data/repositories/mock_notes_repository.dart';
 import '../data/repositories/mock_emploi_repository.dart';
 import '../data/repositories/mock_devoirs_repository.dart';
+import '../data/repositories/mock_absences_repository.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/notes_repository.dart';
 import '../domain/repositories/emploi_du_temps_repository.dart';
 import '../domain/repositories/communication_repository.dart';
+import '../domain/repositories/absences_repository.dart';
 import '../presentation/blocs/auth/auth_bloc.dart';
 import '../presentation/blocs/notes/notes_bloc.dart';
 import '../presentation/blocs/emploi_du_temps/emploi_du_temps_bloc.dart';
 import '../presentation/blocs/communication/communication_bloc.dart';
+import '../presentation/blocs/absences/absences_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -44,4 +47,8 @@ Future<void> setupDependencies({bool firebaseReady = false}) async {
   // Communication + Devoirs
   sl.registerLazySingleton<CommunicationRepository>(() => MockCommunicationRepository());
   sl.registerFactory(() => CommunicationBloc(sl()));
+
+  // Absences
+  sl.registerLazySingleton<AbsencesRepository>(() => MockAbsencesRepository());
+  sl.registerFactory(() => AbsencesBloc(sl()));
 }

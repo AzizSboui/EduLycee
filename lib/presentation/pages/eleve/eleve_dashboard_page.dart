@@ -5,10 +5,12 @@ import '../../../injection/dependency_injection.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../blocs/absences/absences_bloc.dart';
 import '../../blocs/communication/communication_bloc.dart';
 import '../../blocs/emploi_du_temps/emploi_du_temps_bloc.dart';
 import '../../blocs/notes/notes_bloc.dart';
 import '../../themes/app_theme.dart';
+import 'absences_page.dart';
 import 'devoirs_page.dart';
 import 'emploi_du_temps_page.dart';
 import 'notes_page.dart';
@@ -55,6 +57,11 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
             create: (_) => sl<CommunicationBloc>(),
             child: DevoirsPage(classeId: user?.classeId ?? 'classe-001'),
           ),
+          BlocProvider(
+            create: (_) => sl<AbsencesBloc>()
+              ..add(AbsencesLoadByEleve(user?.uid ?? 'eleve-001')),
+            child: const AbsencesPage(),
+          ),
           _ProfilTab(user: user),
         ],
       ),
@@ -79,6 +86,10 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
               activeIcon: Icon(Icons.assignment),
               label: 'Devoirs'),
           BottomNavigationBarItem(
+              icon: Icon(Icons.event_busy_outlined),
+              activeIcon: Icon(Icons.event_busy),
+              label: 'Absences'),
+          BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Profil'),
@@ -92,7 +103,8 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
       case 1: return 'Mes Notes';
       case 2: return 'Emploi du temps';
       case 3: return 'Devoirs';
-      case 4: return 'Mon Profil';
+      case 4: return 'Absences';
+      case 5: return 'Mon Profil';
       default: return 'Tableau de bord';
     }
   }
@@ -178,12 +190,12 @@ class _HomeTab extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary)),
           const SizedBox(height: 12),
-          _AnnonceCard(
+          const _AnnonceCard(
             titre: 'Conseil de classe',
             contenu: 'Le conseil du 1er trimestre aura lieu le 15 janvier.',
             important: true,
           ),
-          _AnnonceCard(
+          const _AnnonceCard(
             titre: 'Sortie scolaire',
             contenu: 'Sortie au musée le 20 janvier. Autorisation requise.',
             important: false,

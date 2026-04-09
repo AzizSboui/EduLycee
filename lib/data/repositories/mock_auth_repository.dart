@@ -8,7 +8,7 @@ import '../../domain/repositories/auth_repository.dart';
 ///   admin@test.com   / 123456  → rôle admin
 class MockAuthRepository implements AuthRepository {
   Utilisateur? _current;
-/ modificatio
+
   static const _users = {
     'eleve@test.com': Utilisateur(
       uid: 'eleve-001',
