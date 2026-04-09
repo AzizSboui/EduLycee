@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "496366939804",
+    "project_id": "edulycee-66a3a",
+    "storage_bucket": "edulycee-66a3a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:496366939804:android:0f0cc96b0c55617a48c759",
+        "android_client_info": {
+          "package_name": "com.example.scoalr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDN-by140aCG6rYLrqo2spQU-buG7x6ozY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

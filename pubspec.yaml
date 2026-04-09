@@ -1,0 +1,56 @@
+name: scoalr
+description: "Application de Gestion Scolaire - DEVMOB-EduLycee"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.2
+  firebase_messaging: ^15.1.3
+  firebase_analytics: ^11.3.3
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # DI
+  get_it: ^8.0.2
+
+  # Navigation
+  go_router: ^14.3.0
+
+  # UI
+  fl_chart: ^0.69.0
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  intl: ^0.19.0
+
+  # Utils
+  shared_preferences: ^2.3.2
+  connectivity_plus: ^6.0.5
+  image_picker: ^1.1.2
+  uuid: ^4.5.1
+  rxdart: ^0.28.0
+  get: ^4.7.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
