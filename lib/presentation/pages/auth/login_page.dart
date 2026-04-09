@@ -6,6 +6,7 @@ import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../themes/app_theme.dart';
 import 'register_page.dart';
+/modif pour commit
 
 const _roles = [
   _RoleInfo(label: 'Élève',      icon: Icons.person_rounded,              color: Color(0xFF6366F1), bg: Color(0xFFEEF2FF), hint: 'eleve@test.com'),
