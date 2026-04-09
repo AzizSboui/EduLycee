@@ -7,7 +7,7 @@ import '../../blocs/auth/auth_state.dart';
 import '../../themes/app_theme.dart';
 import 'register_page.dart';
 
-
+/ modific
 const _roles = [
   _RoleInfo(label: 'Élève',      icon: Icons.person_rounded,              color: Color(0xFF6366F1), bg: Color(0xFFEEF2FF), hint: 'eleve@test.com'),
   _RoleInfo(label: 'Parent',     icon: Icons.family_restroom_rounded,     color: Color(0xFF10B981), bg: Color(0xFFECFDF5), hint: 'parent@test.com'),
