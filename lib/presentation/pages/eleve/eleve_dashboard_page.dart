@@ -13,6 +13,7 @@ import '../../themes/app_theme.dart';
 import 'absences_page.dart';
 import 'devoirs_page.dart';
 import 'emploi_du_temps_page.dart';
+import 'messagerie_eleve_page.dart';
 import 'notes_page.dart';
 
 class EleveDashboardPage extends StatefulWidget {
@@ -62,6 +63,7 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
               ..add(AbsencesLoadByEleve(user?.uid ?? 'eleve-001')),
             child: const AbsencesPage(),
           ),
+          const MessagerieElevePage(),
           _ProfilTab(user: user),
         ],
       ),

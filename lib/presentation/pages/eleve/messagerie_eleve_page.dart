@@ -9,156 +9,133 @@ import '../../blocs/auth/auth_state.dart';
 import '../../themes/app_theme.dart';
 import '../../widgets/app_loading.dart';
 
-// ── Modèle contact léger ──────────────────────────────────────────────────────
 class _Contact {
   final String uid;
   final String nom;
   final String prenom;
   final String role;
-
-  const _Contact({
-    required this.uid,
-    required this.nom,
-    required this.prenom,
-    required this.role,
-  });
+  const _Contact(
+      {required this.uid,
+      required this.nom,
+      required this.prenom,
+      required this.role});
 
   String get fullName => '$prenom $nom';
 
   IconData get icon {
     switch (role) {
-      case 'eleve':       return Icons.person_rounded;
-      case 'parent':      return Icons.family_restroom_rounded;
-      case 'admin':       return Icons.admin_panel_settings_rounded;
-      case 'professeur':  return Icons.school_rounded;
-      default:            return Icons.person_outline;
+      case 'professeur': return Icons.school_rounded;
+      case 'admin':      return Icons.admin_panel_settings_rounded;
+      case 'parent':     return Icons.family_restroom_rounded;
+      default:           return Icons.person_rounded;
     }
   }
 
   Color get color {
     switch (role) {
-      case 'eleve':       return const Color(0xFF6366F1);
-      case 'parent':      return const Color(0xFF10B981);
-      case 'admin':       return const Color(0xFFEF4444);
-      case 'professeur':  return const Color(0xFFF59E0B);
-      default:            return AppColors.primary;
+      case 'professeur': return const Color(0xFFF59E0B);
+      case 'admin':      return const Color(0xFFEF4444);
+      case 'parent':     return const Color(0xFF10B981);
+      default:           return const Color(0xFF6366F1);
     }
   }
 
   String get roleLabel {
     switch (role) {
-      case 'eleve':       return 'Élève';
-      case 'parent':      return 'Parent';
-      case 'admin':       return 'Admin';
-      case 'professeur':  return 'Professeur';
-      default:            return role;
+      case 'professeur': return 'Professeur';
+      case 'admin':      return 'Admin';
+      case 'parent':     return 'Parent';
+      default:           return 'Élève';
     }
   }
 }
 
-// ── Page principale ───────────────────────────────────────────────────────────
-class MessageriePage extends StatefulWidget {
-  const MessageriePage({super.key});
+class MessagerieElevePage extends StatefulWidget {
+  const MessagerieElevePage({super.key});
 
   @override
-  State<MessageriePage> createState() => _MessageriePageState();
+  State<MessagerieElevePage> createState() => _MessagerieElevePageState();
 }
 
-class _MessageriePageState extends State<MessageriePage> {
-  _Contact? _contactSelectionne;
+class _MessagerieElevePageState extends State<MessagerieElevePage> {
+  _Contact? _contact;
 
   @override
   Widget build(BuildContext context) {
-    if (_contactSelectionne != null) {
+    if (_contact != null) {
       return _ConversationView(
-        contact: _contactSelectionne!,
-        onBack: () => setState(() => _contactSelectionne = null),
+        contact: _contact!,
+        onBack: () => setState(() => _contact = null),
       );
     }
-    return _ContactsListView(
-      onSelect: (c) => setState(() => _contactSelectionne = c),
-    );
+    return _ContactsList(
+        onSelect: (c) => setState(() => _contact = c));
   }
 }
 
-// ── Liste contacts depuis Firestore ───────────────────────────────────────────
-class _ContactsListView extends StatelessWidget {
+class _ContactsList extends StatelessWidget {
   final ValueChanged<_Contact> onSelect;
-  const _ContactsListView({required this.onSelect});
+  const _ContactsList({required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
-    final myId = authState is AuthAuthenticated
-        ? authState.utilisateur.uid
-        : '';
+    final myId =
+        authState is AuthAuthenticated ? authState.utilisateur.uid : '';
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection(AppConstants.usersCollection)
           .where('isActive', isEqualTo: true)
           .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
           return const AppLoading();
         }
 
         final contacts = <_Contact>[];
-        if (snapshot.hasData) {
-          for (final doc in snapshot.data!.docs) {
-            if (doc.id == myId) continue; // exclure soi-même
+        if (snap.hasData) {
+          for (final doc in snap.data!.docs) {
+            if (doc.id == myId) continue;
             final d = doc.data() as Map<String, dynamic>;
+            final role = d['role'] ?? '';
+            // L'élève peut contacter profs, admins et ses parents
+            if (!['professeur', 'admin', 'parent'].contains(role)) continue;
             contacts.add(_Contact(
               uid: doc.id,
               nom: d['nom'] ?? '',
               prenom: d['prenom'] ?? '',
-              role: d['role'] ?? '',
+              role: role,
             ));
           }
         }
 
         if (contacts.isEmpty) {
           return const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.people_outline,
-                    size: 48, color: AppColors.textSecondary),
-                SizedBox(height: 12),
-                Text('Aucun utilisateur trouvé',
-                    style: TextStyle(color: AppColors.textSecondary)),
-              ],
-            ),
+            child: Text('Aucun contact disponible',
+                style: TextStyle(color: AppColors.textSecondary)),
           );
         }
 
-        // Grouper par rôle
         final Map<String, List<_Contact>> grouped = {};
         for (final c in contacts) {
           grouped.putIfAbsent(c.roleLabel, () => []).add(c);
         }
 
-        // Ordre d'affichage
-        final ordre = ['Élève', 'Parent', 'Professeur', 'Admin'];
-        final keys = [
-          ...ordre.where(grouped.containsKey),
-          ...grouped.keys.where((k) => !ordre.contains(k)),
-        ];
-
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            for (final key in keys) ...[
+            for (final entry in grouped.entries) ...[
               Padding(
                 padding: const EdgeInsets.only(bottom: 8, top: 4),
-                child: Text(key,
+                child: Text(entry.key,
                     style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textSecondary,
                         letterSpacing: 0.5)),
               ),
-              ...grouped[key]!.map((c) => _ContactTile(
+              ...entry.value.map((c) => _ContactTile(
                     contact: c,
                     myId: myId,
                     onTap: () => onSelect(c),
@@ -172,7 +149,6 @@ class _ContactsListView extends StatelessWidget {
   }
 }
 
-// ── Tile contact avec badge non-lus ──────────────────────────────────────────
 class _ContactTile extends StatelessWidget {
   final _Contact contact;
   final String myId;
@@ -182,7 +158,6 @@ class _ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Écouter les messages non lus de ce contact vers moi
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('messages')
@@ -192,7 +167,6 @@ class _ContactTile extends StatelessWidget {
           .snapshots(),
       builder: (context, snap) {
         final unread = snap.data?.docs.length ?? 0;
-
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
@@ -223,9 +197,8 @@ class _ContactTile extends StatelessWidget {
                       width: 16,
                       height: 16,
                       decoration: const BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
+                          color: AppColors.error,
+                          shape: BoxShape.circle),
                       child: Center(
                         child: Text('$unread',
                             style: const TextStyle(
@@ -255,7 +228,6 @@ class _ContactTile extends StatelessWidget {
   }
 }
 
-// ── Vue conversation ──────────────────────────────────────────────────────────
 class _ConversationView extends StatefulWidget {
   final _Contact contact;
   final VoidCallback onBack;
@@ -284,11 +256,15 @@ class _ConversationViewState extends State<_ConversationView> {
   }
 
   String get _myId {
-    final state = context.read<AuthBloc>().state;
-    return state is AuthAuthenticated ? state.utilisateur.uid : '';
+    final s = context.read<AuthBloc>().state;
+    return s is AuthAuthenticated ? s.utilisateur.uid : '';
   }
 
-  // Marquer les messages reçus comme lus
+  String _convId(String a, String b) {
+    final sorted = [a, b]..sort();
+    return '${sorted[0]}_${sorted[1]}';
+  }
+
   Future<void> _markAsRead() async {
     final myId = _myId;
     final snap = await FirebaseFirestore.instance
@@ -297,7 +273,6 @@ class _ConversationViewState extends State<_ConversationView> {
         .where('destinataireId', isEqualTo: myId)
         .where('lu', isEqualTo: false)
         .get();
-
     final batch = FirebaseFirestore.instance.batch();
     for (final doc in snap.docs) {
       batch.update(doc.reference, {'lu': true});
@@ -309,10 +284,8 @@ class _ConversationViewState extends State<_ConversationView> {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
     _ctrl.clear();
-
     final myId = _myId;
     final msgId = const Uuid().v4();
-
     await FirebaseFirestore.instance
         .collection('messages')
         .doc(msgId)
@@ -323,33 +296,17 @@ class _ConversationViewState extends State<_ConversationView> {
       'contenu': text,
       'dateEnvoi': FieldValue.serverTimestamp(),
       'lu': false,
-      'conversationId': _conversationId(myId, widget.contact.uid),
+      'conversationId': _convId(myId, widget.contact.uid),
     });
-
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  String _conversationId(String a, String b) {
-    final sorted = [a, b]..sort();
-    return '${sorted[0]}_${sorted[1]}';
   }
 
   @override
   Widget build(BuildContext context) {
     final myId = _myId;
-    final convId = _conversationId(myId, widget.contact.uid);
+    final convId = _convId(myId, widget.contact.uid);
 
     return Column(
       children: [
-        // Header
         Container(
           color: Colors.white,
           padding:
@@ -389,7 +346,6 @@ class _ConversationViewState extends State<_ConversationView> {
           ),
         ),
         const Divider(height: 1),
-        // Messages en temps réel depuis Firestore
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -401,34 +357,20 @@ class _ConversationViewState extends State<_ConversationView> {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const AppLoading();
               }
-
               final docs = snap.data?.docs ?? [];
 
               if (docs.isEmpty) {
                 return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.chat_bubble_outline_rounded,
-                          size: 48,
-                          color: AppColors.textSecondary
-                              .withValues(alpha: 0.4)),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Démarrez la conversation\navec ${widget.contact.fullName}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14),
-                      ),
-                    ],
+                  child: Text(
+                    'Démarrez la conversation\navec ${widget.contact.fullName}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppColors.textSecondary, fontSize: 14),
                   ),
                 );
               }
 
-              // Marquer comme lus à chaque nouveau message
               _markAsRead();
-
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (_scrollCtrl.hasClients) {
                   _scrollCtrl.animateTo(
@@ -448,17 +390,15 @@ class _ConversationViewState extends State<_ConversationView> {
                   final isMe = d['expediteurId'] == myId;
                   final ts = d['dateEnvoi'] as Timestamp?;
                   final date = ts?.toDate() ?? DateTime.now();
-                  return _MessageBubble(
-                    contenu: d['contenu'] ?? '',
-                    isMe: isMe,
-                    date: date,
-                  );
+                  return _Bubble(
+                      contenu: d['contenu'] ?? '',
+                      isMe: isMe,
+                      date: date);
                 },
               );
             },
           ),
         ),
-        // Champ saisie
         Container(
           color: Colors.white,
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -472,8 +412,8 @@ class _ConversationViewState extends State<_ConversationView> {
                   onSubmitted: (_) => _send(),
                   decoration: InputDecoration(
                     hintText: 'Écrire un message...',
-                    hintStyle: const TextStyle(
-                        color: AppColors.textHint),
+                    hintStyle:
+                        const TextStyle(color: AppColors.textHint),
                     filled: true,
                     fillColor: AppColors.background,
                     contentPadding: const EdgeInsets.symmetric(
@@ -492,9 +432,7 @@ class _ConversationViewState extends State<_ConversationView> {
                   width: 44,
                   height: 44,
                   decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
+                      color: AppColors.primary, shape: BoxShape.circle),
                   child: const Icon(Icons.send_rounded,
                       color: Colors.white, size: 18),
                 ),
@@ -507,12 +445,11 @@ class _ConversationViewState extends State<_ConversationView> {
   }
 }
 
-// ── Bulle message ─────────────────────────────────────────────────────────────
-class _MessageBubble extends StatelessWidget {
+class _Bubble extends StatelessWidget {
   final String contenu;
   final bool isMe;
   final DateTime date;
-  const _MessageBubble(
+  const _Bubble(
       {required this.contenu, required this.isMe, required this.date});
 
   @override
@@ -546,8 +483,9 @@ class _MessageBubble extends StatelessWidget {
             Text(contenu,
                 style: TextStyle(
                     fontSize: 14,
-                    color:
-                        isMe ? Colors.white : AppColors.textPrimary)),
+                    color: isMe
+                        ? Colors.white
+                        : AppColors.textPrimary)),
             const SizedBox(height: 4),
             Text(
               '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
