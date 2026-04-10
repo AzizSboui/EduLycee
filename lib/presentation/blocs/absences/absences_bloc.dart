@@ -25,6 +25,13 @@ class AbsenceJustifier extends AbsencesEvent {
   List<Object?> get props => [absenceId, motif];
 }
 
+class AbsenceSignaler extends AbsencesEvent {
+  final Absence absence;
+  const AbsenceSignaler(this.absence);
+  @override
+  List<Object?> get props => [absence];
+}
+
 // ── States ────────────────────────────────────────────────────────────────────
 abstract class AbsencesState extends Equatable {
   const AbsencesState();
@@ -75,6 +82,7 @@ class AbsencesBloc extends Bloc<AbsencesEvent, AbsencesState> {
   AbsencesBloc(this._repository) : super(AbsencesInitial()) {
     on<AbsencesLoadByEleve>(_onLoad);
     on<AbsenceJustifier>(_onJustifier);
+    on<AbsenceSignaler>(_onSignaler);
   }
 
   Future<void> _onLoad(
@@ -108,6 +116,16 @@ class AbsencesBloc extends Bloc<AbsencesEvent, AbsencesState> {
     try {
       await _repository.justifierAbsence(event.absenceId, event.motif);
       emit(const AbsenceOperationSuccess('Absence justifiée'));
+    } catch (e) {
+      emit(AbsencesError(e.toString()));
+    }
+  }
+
+  Future<void> _onSignaler(
+      AbsenceSignaler event, Emitter<AbsencesState> emit) async {
+    try {
+      await _repository.signalerAbsence(event.absence);
+      emit(const AbsenceOperationSuccess('Absence signalée'));
     } catch (e) {
       emit(AbsencesError(e.toString()));
     }

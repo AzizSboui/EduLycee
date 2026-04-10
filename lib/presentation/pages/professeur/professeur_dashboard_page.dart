@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../injection/dependency_injection.dart';
+import '../../blocs/absences/absences_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../blocs/communication/communication_bloc.dart';
 import '../../blocs/notes/notes_bloc.dart';
 import '../../themes/app_theme.dart';
+import 'appel_page.dart';
+import 'messagerie_page.dart';
 import 'saisie_notes_page.dart';
 
 class ProfesseurDashboardPage extends StatefulWidget {
@@ -20,33 +24,16 @@ class ProfesseurDashboardPage extends StatefulWidget {
 class _ProfesseurDashboardPageState extends State<ProfesseurDashboardPage> {
   int _currentIndex = 0;
 
-  final _tabs = [
-    const _ClassesTab(),
-    BlocProvider(
-      create: (_) => sl<NotesBloc>(),
-      child: const SaisieNotesPage(),
-    ),
-    const _MessagesTab(),
-    const _StatistiquesTab(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        final user =
-            state is AuthAuthenticated ? state.utilisateur : null;
+        final user = state is AuthAuthenticated ? state.utilisateur : null;
 
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: Text(_currentIndex == 0
-                ? 'Mes Classes'
-                : _currentIndex == 1
-                    ? 'Saisie Notes'
-                    : _currentIndex == 2
-                        ? 'Messages'
-                        : 'Statistiques'),
+            title: Text(_appBarTitle),
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -64,24 +51,62 @@ class _ProfesseurDashboardPageState extends State<ProfesseurDashboardPage> {
               ),
             ],
           ),
-          body: _tabs[_currentIndex],
+          body: IndexedStack(
+            index: _currentIndex,
+            children: [
+              const _ClassesTab(),
+              BlocProvider(
+                create: (_) => sl<NotesBloc>(),
+                child: const SaisieNotesPage(),
+              ),
+              MultiBlocProvider(
+                providers: [
+                  BlocProvider(create: (_) => sl<AbsencesBloc>()),
+                ],
+                child: const AppelPage(),
+              ),
+              MultiBlocProvider(
+                providers: [
+                  BlocProvider(create: (_) => sl<CommunicationBloc>()),
+                ],
+                child: const MessageriePage(),
+              ),
+            ],
+          ),
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (i) => setState(() => _currentIndex = i),
             items: const [
               BottomNavigationBarItem(
-                  icon: Icon(Icons.class_), label: 'Classes'),
+                  icon: Icon(Icons.class_outlined),
+                  activeIcon: Icon(Icons.class_),
+                  label: 'Classes'),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.grade), label: 'Saisie notes'),
+                  icon: Icon(Icons.grade_outlined),
+                  activeIcon: Icon(Icons.grade),
+                  label: 'Notes'),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.chat), label: 'Messages'),
+                  icon: Icon(Icons.how_to_reg_outlined),
+                  activeIcon: Icon(Icons.how_to_reg),
+                  label: 'Appel'),
               BottomNavigationBarItem(
-                  icon: Icon(Icons.analytics), label: 'Statistiques'),
+                  icon: Icon(Icons.chat_outlined),
+                  activeIcon: Icon(Icons.chat),
+                  label: 'Messages'),
             ],
           ),
         );
       },
     );
+  }
+
+  String get _appBarTitle {
+    switch (_currentIndex) {
+      case 1: return 'Saisie Notes';
+      case 2: return 'Faire l\'appel';
+      case 3: return 'Messages';
+      default: return 'Mes Classes';
+    }
   }
 }
 
@@ -129,32 +154,6 @@ class _ClassCard extends StatelessWidget {
         subtitle: Text('$matiere • $eleves élèves'),
         trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
       ),
-    );
-  }
-}
-
-// ── Onglet Messages ─────────────────────────────────────────────────────────
-class _MessagesTab extends StatelessWidget {
-  const _MessagesTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Messagerie — prochaine étape',
-          style: TextStyle(color: AppColors.textSecondary)),
-    );
-  }
-}
-
-// ── Onglet Statistiques ─────────────────────────────────────────────────────
-class _StatistiquesTab extends StatelessWidget {
-  const _StatistiquesTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Statistiques — prochaine étape',
-          style: TextStyle(color: AppColors.textSecondary)),
     );
   }
 }
