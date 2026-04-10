@@ -40,12 +40,17 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Déconnexion',
+            onPressed: () => context.read<AuthBloc>().add(AuthSignOutRequested()),
+          ),
         ],
       ),
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _HomeTab(user: user),
+          _HomeTab(user: user, onNavigate: (i) => setState(() => _currentIndex = i)),
           BlocProvider(
             create: (_) => sl<NotesBloc>(),
             child: const NotesPage(),
@@ -92,6 +97,10 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
               activeIcon: Icon(Icons.event_busy),
               label: 'Absences'),
           BottomNavigationBarItem(
+              icon: Icon(Icons.chat_outlined),
+              activeIcon: Icon(Icons.chat),
+              label: 'Messages'),
+          BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Profil'),
@@ -106,7 +115,8 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
       case 2: return 'Emploi du temps';
       case 3: return 'Devoirs';
       case 4: return 'Absences';
-      case 5: return 'Mon Profil';
+      case 5: return 'Messages';
+      case 6: return 'Mon Profil';
       default: return 'Tableau de bord';
     }
   }
@@ -115,7 +125,8 @@ class _EleveDashboardPageState extends State<EleveDashboardPage> {
 // ── Accueil ──────────────────────────────────────────────────────────────────
 class _HomeTab extends StatelessWidget {
   final dynamic user;
-  const _HomeTab({this.user});
+  final ValueChanged<int> onNavigate;
+  const _HomeTab({this.user, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -178,11 +189,31 @@ class _HomeTab extends StatelessWidget {
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             childAspectRatio: 1.3,
-            children: const [
-              _QuickCard(icon: Icons.grade, label: 'Mes Notes', color: AppColors.primary),
-              _QuickCard(icon: Icons.schedule, label: 'Emploi du temps', color: AppColors.secondary),
-              _QuickCard(icon: Icons.assignment, label: 'Devoirs', color: Color(0xFF9C27B0)),
-              _QuickCard(icon: Icons.chat_bubble_outline, label: 'Messages', color: AppColors.accent),
+            children: [
+              _QuickCard(
+                icon: Icons.grade,
+                label: 'Mes Notes',
+                color: AppColors.primary,
+                onTap: () => onNavigate(1),
+              ),
+              _QuickCard(
+                icon: Icons.schedule,
+                label: 'Emploi du temps',
+                color: AppColors.secondary,
+                onTap: () => onNavigate(2),
+              ),
+              _QuickCard(
+                icon: Icons.assignment,
+                label: 'Devoirs',
+                color: const Color(0xFF9C27B0),
+                onTap: () => onNavigate(3),
+              ),
+              _QuickCard(
+                icon: Icons.chat_bubble_outline,
+                label: 'Messages',
+                color: AppColors.accent,
+                onTap: () => onNavigate(5),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -212,20 +243,28 @@ class _QuickCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _QuickCard({required this.icon, required this.label, required this.color});
+  final VoidCallback onTap;
+  const _QuickCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 26),
@@ -234,7 +273,8 @@ class _QuickCard extends StatelessWidget {
           Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -289,31 +329,72 @@ class _ProfilTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        // Avatar
         Center(
           child: CircleAvatar(
             radius: 44,
             backgroundColor: AppColors.primary,
             child: Text(
               (user?.prenom ?? 'E').substring(0, 1).toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold),
             ),
           ),
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(user?.fullName ?? '',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary)),
         ),
         Center(
           child: Text(user?.email ?? '',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 13)),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 8),
+        Center(
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text('Élève',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6366F1))),
+          ),
+        ),
+        const SizedBox(height: 32),
         const Divider(),
-        ListTile(
-          leading: const Icon(Icons.logout, color: AppColors.error),
-          title: const Text('Déconnexion', style: TextStyle(color: AppColors.error)),
-          onTap: () => context.read<AuthBloc>().add(AuthSignOutRequested()),
+        const SizedBox(height: 12),
+        // Bouton déconnexion bien visible
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton.icon(
+            onPressed: () => context
+                .read<AuthBloc>()
+                .add(AuthSignOutRequested()),
+            icon: const Icon(Icons.logout_rounded, size: 18),
+            label: const Text('Se déconnecter',
+                style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+          ),
         ),
       ],
     );

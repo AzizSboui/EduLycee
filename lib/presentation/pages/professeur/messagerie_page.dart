@@ -417,7 +417,6 @@ class _ConversationViewState extends State<_ConversationView> {
             stream: FirebaseFirestore.instance
                 .collection('messages')
                 .where('conversationId', isEqualTo: convId)
-                .orderBy('dateEnvoi', descending: false)
                 .snapshots(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
@@ -425,6 +424,14 @@ class _ConversationViewState extends State<_ConversationView> {
               }
 
               final docs = snap.data?.docs ?? [];
+              // Trier côté client par date — évite l'index composite Firestore
+              docs.sort((a, b) {
+                final da = (a.data() as Map)['dateEnvoi'];
+                final db = (b.data() as Map)['dateEnvoi'];
+                if (da == null) return -1;
+                if (db == null) return 1;
+                return (da as Timestamp).compareTo(db as Timestamp);
+              });
 
               if (docs.isEmpty) {
                 return Center(
