@@ -86,12 +86,32 @@ class _ContactsListView extends StatelessWidget {
   final ValueChanged<_Contact> onSelect;
   const _ContactsListView({required this.onSelect});
 
+  // Rôles visibles selon le rôle de l'utilisateur connecté
+  List<String> _rolesVisibles(String monRole) {
+    switch (monRole) {
+      case 'eleve':
+        return ['professeur', 'admin'];
+      case 'parent':
+        return ['professeur', 'admin'];
+      case 'professeur':
+        return ['eleve', 'parent', 'admin'];
+      case 'admin':
+        return ['eleve', 'parent', 'professeur', 'admin'];
+      default:
+        return ['professeur', 'admin'];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
     final myId = authState is AuthAuthenticated
         ? authState.utilisateur.uid
         : '';
+    final monRole = authState is AuthAuthenticated
+        ? authState.utilisateur.role.name
+        : '';
+    final rolesAutorises = _rolesVisibles(monRole);
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -106,13 +126,15 @@ class _ContactsListView extends StatelessWidget {
         final contacts = <_Contact>[];
         if (snapshot.hasData) {
           for (final doc in snapshot.data!.docs) {
-            if (doc.id == myId) continue; // exclure soi-même
+            if (doc.id == myId) continue;
             final d = doc.data() as Map<String, dynamic>;
+            final role = d['role'] as String? ?? '';
+            if (!rolesAutorises.contains(role)) continue;
             contacts.add(_Contact(
               uid: doc.id,
               nom: d['nom'] ?? '',
               prenom: d['prenom'] ?? '',
-              role: d['role'] ?? '',
+              role: role,
             ));
           }
         }

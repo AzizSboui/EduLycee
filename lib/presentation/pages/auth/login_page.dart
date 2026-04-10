@@ -14,7 +14,7 @@ const _roles = [
   _RoleInfo(label: 'Professeur', icon: Icons.school_rounded,              color: Color(0xFFF59E0B), bg: Color(0xFFFFFBEB), hint: 'prof@test.com'),
   _RoleInfo(label: 'Admin',      icon: Icons.admin_panel_settings_rounded, color: Color(0xFFEF4444), bg: Color(0xFFFEF2F2), hint: 'admin@test.com'),
 ];
-?
+
 class _RoleInfo {
   final String label;
   final IconData icon;
